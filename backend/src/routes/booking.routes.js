@@ -124,24 +124,42 @@ router.post("/:id/approve", protect, authorize("host"), async (req, res) => {
   res.json({ booking });
 });
 
-router.post("/:id/check-in", protect, async (req, res) => {
+router.post("/:id/check-in", protect, authorize("host"), async (req, res) => {
   const { qrToken } = req.body;
-  const booking = await Booking.findById(req.params.id);
+  const booking = await Booking.findById(req.params.id).populate("spaceId");
+
   if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+  // Verify that the person scanning is the host of this space
+  if (String(booking.spaceId.hostId) !== String(req.user._id)) {
+    return res.status(403).json({ message: "Forbidden: You are not the host of this space" });
+  }
+
   if (booking.qrToken !== qrToken) return res.status(400).json({ message: "Invalid QR token" });
   if (!["confirmed", "pending"].includes(booking.status)) {
     return res.status(400).json({ message: "Booking is not eligible for check-in" });
   }
+
   booking.entryTime = new Date();
   booking.status = "active";
   await booking.save();
-  res.json({ booking });
+
+  // Re-fetch populated for frontend
+  const populatedBooking = await Booking.findById(booking._id).populate("userId", "name phone");
+  res.json({ booking: populatedBooking });
 });
 
-router.post("/:id/check-out", protect, async (req, res) => {
+router.post("/:id/check-out", protect, authorize("host"), async (req, res) => {
   const { qrToken } = req.body;
   const booking = await Booking.findById(req.params.id).populate("spaceId");
+
   if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+  // Verify that the person scanning is the host of this space
+  if (String(booking.spaceId.hostId) !== String(req.user._id)) {
+    return res.status(403).json({ message: "Forbidden: You are not the host of this space" });
+  }
+
   if (booking.qrToken !== qrToken) return res.status(400).json({ message: "Invalid QR token" });
   if (booking.status !== "active" || !booking.entryTime) {
     return res.status(400).json({ message: "Booking is not active" });
@@ -155,12 +173,16 @@ router.post("/:id/check-out", protect, async (req, res) => {
     pricePerHour: booking.spaceId.pricePerHour,
     commissionPercent
   });
+
   booking.exitTime = exitTime;
   booking.durationHours = summary.durationHours;
   booking.totalAmount = summary.totalAmount;
   booking.status = "completed";
   await booking.save();
-  res.json({ booking, summary });
+
+  // Re-fetch populated for frontend
+  const populatedBooking = await Booking.findById(booking._id).populate("userId", "name phone");
+  res.json({ booking: populatedBooking, summary });
 });
 
 module.exports = router;

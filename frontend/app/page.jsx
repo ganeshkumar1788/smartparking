@@ -4,19 +4,23 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRef } from "react";
 
-const FeatureCard = ({ title, text, icon, delay }) => (
+const FeatureCard = ({ title, text, icon, delay, color }) => (
   <motion.div
     initial={{ opacity: 0, y: 30 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5, delay }}
-    className="glass group relative overflow-hidden rounded-3xl p-8 shadow-glass transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-smartBlue/20"
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true }}
+    transition={{ duration: 0.6, delay }}
+    className="glass group relative overflow-hidden rounded-[2.5rem] p-10 transition-all hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(15,95,255,0.15)] ring-1 ring-white/20"
   >
-    <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br from-smartBlue/20 to-smartTeal/20 blur-2xl transition-all group-hover:bg-smartBlue/30"></div>
-    <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/50 text-3xl shadow-sm border border-white/40">
+    <div className={`absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br ${color} blur-3xl opacity-20 transition-all group-hover:opacity-40`}></div>
+    <div className="relative mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/40 text-4xl shadow-sm backdrop-blur-md border border-white/40 dark:bg-white/10">
       {icon}
     </div>
-    <h3 className="mb-3 text-xl font-bold tracking-tight text-gray-900">{title}</h3>
-    <p className="text-gray-600 leading-relaxed">{text}</p>
+    <h3 className="relative mb-3 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">{title}</h3>
+    <p className="relative text-gray-600 leading-relaxed dark:text-gray-400">{text}</p>
+    <div className="mt-6 flex items-center text-sm font-bold text-smartBlue dark:text-smartTeal">
+      Learn more <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
+    </div>
   </motion.div>
 );
 
@@ -24,108 +28,139 @@ export default function HomePage() {
   const containerRef = useRef(null);
 
   return (
-    <div ref={containerRef} className="relative w-full overflow-hidden pb-20">
-      {/* Decorative Background Elements */}
-      <div className="absolute -left-[10%] top-0 -z-10 h-[500px] w-[500px] rounded-full bg-smartTeal/20 blur-[100px]" />
-      <div className="absolute -right-[10%] top-[20%] -z-10 h-[600px] w-[600px] rounded-full bg-smartBlue/20 blur-[120px]" />
+    <div ref={containerRef} className="relative w-full overflow-hidden pb-32">
+      {/* Dynamic Background Gradients */}
+      <div className="absolute left-[5%] top-[10%] -z-10 h-[600px] w-[600px] rounded-full bg-smartTeal/10 blur-[120px] animate-pulse" />
+      <div className="absolute right-[5%] top-[20%] -z-10 h-[700px] w-[700px] rounded-full bg-smartBlue/10 blur-[140px] animate-pulse delay-700" />
 
       {/* Hero Section */}
-      <section className="relative flex flex-col items-center justify-center pt-24 pb-32 text-center px-4">
+      <section className="relative flex flex-col items-center justify-center pt-20 pb-24 text-center px-4">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 inline-flex items-center gap-2 rounded-full border border-smartTeal/30 bg-smartTeal/10 px-4 py-1.5 text-sm font-medium text-smartTeal"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="mb-10 inline-flex items-center gap-3 rounded-full border border-white/20 bg-white/10 px-6 py-2 text-sm font-bold text-smartInk backdrop-blur-xl dark:text-white"
         >
-          <span className="relative flex h-2.5 w-2.5">
+          <span className="relative flex h-3 w-3">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-smartTeal opacity-75"></span>
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-smartTeal"></span>
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-smartTeal"></span>
           </span>
-          The Future of Urban Parking
+          Next-Gen Urban Mobility
         </motion.div>
 
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight text-gray-900 md:text-7xl lg:text-8xl"
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="mx-auto max-w-5xl text-6xl font-[900] leading-[1.05] tracking-tight text-gray-900 md:text-8xl lg:text-9xl dark:text-white"
         >
-          Park Smarter. <br className="hidden md:block" />
-          <span className="bg-gradient-to-r from-smartBlue to-smartTeal bg-clip-text text-transparent">
-            Earn Faster.
-          </span>
+          Park <span className="text-smartBlue italic">Smarter.</span><br />
+          Earn <span className="bg-gradient-to-r from-smartBlue to-smartTeal bg-clip-text text-transparent">Effortlessly.</span>
         </motion.h1>
 
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="mx-auto mt-6 max-w-2xl text-lg text-gray-600 md:text-xl leading-relaxed"
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="mx-auto mt-10 max-w-3xl text-xl font-medium text-gray-600 md:text-2xl leading-relaxed dark:text-gray-400"
         >
-          Turn your driveway into a cash machine or find instant, affordable parking anywhere in the city. QR check-ins, automated billing, and live navigation in one seamless app.
+          The most advanced parking network in India. Monetize your empty space or find the perfect spot instantly with live availability, QR entry, and automated billing.
         </motion.p>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center"
+          transition={{ duration: 0.8, delay: 0.6 }}
+          className="mt-14 flex flex-col sm:flex-row gap-6 justify-center items-center"
         >
           <Link
             href="/register"
-            className="group relative inline-flex items-center justify-center overflow-hidden rounded-2xl bg-smartBlue px-8 py-4 font-bold text-white shadow-xl transition-all hover:scale-105 hover:shadow-smartBlue/40 focus:outline-none focus:ring-2 focus:ring-smartBlue focus:ring-offset-2 w-full sm:w-auto"
+            className="group relative inline-flex h-18 items-center justify-center overflow-hidden rounded-3xl bg-smartInk px-12 py-5 font-black text-xl text-white shadow-2xl transition-all hover:scale-105 active:scale-95 dark:bg-white dark:text-smartInk"
           >
-            <span className="absolute right-0 top-0 h-full w-10 translate-x-12 transform bg-white opacity-20 transition-all duration-300 group-hover:-translate-x-40 group-hover:skew-x-12"></span>
-            Get Started Free 🚀
+            Get Started ⚡
           </Link>
           <Link
             href="/login"
-            className="inline-flex w-full sm:w-auto items-center justify-center rounded-2xl border-2 border-gray-200 bg-white/50 px-8 py-4 font-bold text-gray-700 shadow-sm transition-all hover:border-gray-300 hover:bg-white focus:outline-none focus:ring-2 focus:ring-gray-200 focus:ring-offset-2"
+            className="group inline-flex h-18 items-center justify-center rounded-3xl border-2 border-gray-200 bg-white/50 px-12 py-5 font-black text-xl text-gray-800 transition-all hover:border-smartBlue/30 hover:bg-white dark:border-gray-800 dark:bg-black/20 dark:text-white"
           >
             Log In
           </Link>
         </motion.div>
       </section>
 
-      {/* Feature Cards Section */}
-      <section className="px-4 md:px-8 mx-auto max-w-7xl">
-        <div className="grid gap-8 md:grid-cols-3">
+      {/* Feature Section with Staggered Grid */}
+      <section className="px-4 md:px-8 mx-auto max-w-7xl relative">
+        <div className="grid gap-10 md:grid-cols-3">
           <FeatureCard
-            delay={0.4}
-            icon="🚗"
-            title="Driver App"
-            text="Search the live map, book spots instantly, check in via QR code, and pay seamlessly on exit all from one dashboard."
+            delay={0.1}
+            color="from-blue-500 to-cyan-400"
+            icon="🚙"
+            title="Drive & Find"
+            text="Interactive live-map with GPS navigation. Book premium spots in seconds and navigate directly to your destination."
           />
           <FeatureCard
-            delay={0.5}
-            icon="🏠"
-            title="Host Dashboard"
-            text="List your unused driveway or garage in seconds. Set your own hourly price and let our automated platform handle the payments."
+            delay={0.2}
+            color="from-emerald-500 to-teal-400"
+            icon="🏦"
+            title="Host & Earn"
+            text="List your driveway, garage, or lot. Set your price, scan QR codes on arrival, and receive instant payouts."
           />
           <FeatureCard
-            delay={0.6}
+            delay={0.3}
+            color="from-purple-500 to-pink-400"
             icon="🛡️"
-            title="Admin Control"
-            text="Powerful backend moderation. Approve verify hosts, manage user disputes, and track overarching revenue analytics."
+            title="Admin Suite"
+            text="Comprehensive monitoring tools for host verification, revenue tracking, and dispute management."
           />
         </div>
       </section>
 
-      {/* Decorative Mockup Floating Image */}
+      {/* Visual Showcase Section */}
       <motion.div
-        initial={{ opacity: 0, y: 100 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.7 }}
-        className="mx-auto mt-24 max-w-5xl px-4 hidden md:block"
+        initial={{ opacity: 0, scale: 0.95 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1 }}
+        className="mx-auto mt-32 max-w-7xl px-4"
       >
-        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/50 bg-white/30 p-2 shadow-2xl backdrop-blur-xl">
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"></div>
-          <div className="h-[400px] w-full rounded-3xl bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center overflow-hidden relative">
-            <div className="absolute inset-0 opacity-20 bg-[url('https://maps.wikimedia.org/osm-intl/13/4330/2753.png')] bg-cover bg-center"></div>
-            <div className="z-10 text-center">
-              <span className="text-6xl mb-4 block">🗺️</span>
-              <h3 className="text-white font-bold text-2xl">Interactive Map Interface</h3>
-              <p className="text-gray-400 mt-2">Built with OpenStreetMap & Leaflet</p>
+        <div className="relative overflow-hidden rounded-[3.5rem] bg-smartInk p-4 shadow-[0_50px_100px_rgba(0,0,0,0.4)] md:p-12">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-4xl md:text-6xl font-black text-white leading-tight">
+                Intuitive <br />
+                <span className="text-smartTeal underline decoration-4 underline-offset-8">Map Control.</span>
+              </h2>
+              <p className="mt-6 text-gray-400 text-lg md:text-xl">
+                Real-time spatial data integration allows you to browse hundreds of verified parking locations. No more circling the block.
+              </p>
+              <div className="mt-10 flex gap-4">
+                <div className="flex flex-col">
+                  <span className="text-white text-3xl font-black">200+</span>
+                  <span className="text-gray-500 text-sm font-bold uppercase tracking-wider">Locations</span>
+                </div>
+                <div className="ml-8 flex flex-col">
+                  <span className="text-white text-3xl font-black">15k+</span>
+                  <span className="text-gray-500 text-sm font-bold uppercase tracking-wider">Bookings</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative aspect-square md:aspect-video rounded-[2.5rem] bg-gradient-to-br from-gray-800 to-gray-900 border border-white/10 overflow-hidden group">
+              <div className="absolute inset-0 bg-[url('https://maps.wikimedia.org/osm-intl/13/4330/2753.png')] bg-cover bg-center grayscale opacity-40 group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-smartInk via-transparent to-transparent"></div>
+              <div className="absolute bottom-8 left-8 right-8 flex items-center justify-between">
+                <div className="flex -space-x-3">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="h-10 w-10 rounded-full border-2 border-smartInk bg-gray-700"></div>
+                  ))}
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-smartInk bg-smartBlue text-xs font-bold text-white">
+                    +12
+                  </div>
+                </div>
+                <button className="rounded-2xl bg-white px-6 py-2.5 text-sm font-black text-smartInk active:scale-95 transition-all">
+                  Open Map
+                </button>
+              </div>
             </div>
           </div>
         </div>

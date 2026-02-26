@@ -28,7 +28,7 @@ export default function HostPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [activeTab, setActiveTab] = useState("spaces"); // "spaces" | "scanner"
-  const [scanMessage, setScanMessage] = useState(null); // { type: 'success' | 'error', text: '' }
+  const [scanMessage, setScanMessage] = useState(null); // { type: 'success' | 'error' | 'info', text: '', details: null }
 
   const load = async () => {
     try {
@@ -125,23 +125,42 @@ export default function HostPage() {
           token,
           body: { qrToken: payload.qrToken }
         });
-        setScanMessage({ type: 'success', text: `✅ Driver Checked-In! Direct to Slot: ${checkInRes.booking?.slotId || 'Any'}` });
-        setTimeout(() => { setScanMessage(null); resumeScanner(); }, 4000);
+
+        const booking = checkInRes.booking;
+        setScanMessage({
+          type: 'success',
+          text: `✅ Check-In Successful!`,
+          details: {
+            name: booking.userId?.name || "Guest",
+            vehicle: booking.vehicleNumber,
+            slot: booking.slotId,
+            phone: booking.userId?.phone || booking.phoneNumber
+          }
+        });
+        setTimeout(() => { setScanMessage(null); resumeScanner(); }, 8000);
         return;
       } catch (checkInErr) {
-        // If it says "Booking is not eligible for check-in", it might be active, so try check-out.
-        if (checkInErr.message.includes("not eligible") || checkInErr.message.includes("already active")) {
+        // If it says "Booking is not eligible for check-in" or "Forbidden" (if already active/checked in), try check-out.
+        if (checkInErr.message.includes("not eligible") || checkInErr.message.includes("already active") || checkInErr.message.includes("Forbidden")) {
           const checkOutRes = await apiRequest(`/bookings/${payload.bookingId}/check-out`, {
             method: "POST",
             token,
             body: { qrToken: payload.qrToken }
           });
+
+          const booking = checkOutRes.booking;
           setScanMessage({
             type: 'success',
-            text: `✅ Checked-Out (Slot: ${checkOutRes.booking?.slotId || 'Any'})! Total: ₹${checkOutRes.summary.totalAmount} (${checkOutRes.summary.durationHours} hrs)`
+            text: `✅ Check-Out Complete!`,
+            details: {
+              name: booking.userId?.name || "Guest",
+              vehicle: booking.vehicleNumber,
+              total: `₹${checkOutRes.summary.totalAmount}`,
+              duration: `${checkOutRes.summary.durationHours} hrs`
+            }
           });
           await load(); // Reload earnings
-          setTimeout(() => { setScanMessage(null); resumeScanner(); }, 6000);
+          setTimeout(() => { setScanMessage(null); resumeScanner(); }, 4000);
           return;
         } else {
           throw checkInErr; // Re-throw if it's a different error
@@ -172,17 +191,19 @@ export default function HostPage() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 p-1 bg-gray-100 rounded-xl w-full max-w-sm">
+        <div className="flex gap-2 p-1.5 bg-gray-100/80 backdrop-blur-sm rounded-2xl w-full max-w-md shadow-inner border border-gray-200/50">
           <button
             onClick={() => setActiveTab("spaces")}
-            className={`flex-1 py-2.5 px-4 text-sm font-semibold rounded-lg transition-all ${activeTab === 'spaces' ? 'bg-white shadow-sm text-smartBlue' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`flex-1 py-3 px-4 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'spaces' ? 'bg-white shadow-md text-smartBlue scale-[1.02]' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}
           >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
             Manage Spaces
           </button>
           <button
             onClick={() => setActiveTab("scanner")}
-            className={`flex-1 py-2.5 px-4 text-sm font-semibold rounded-lg transition-all ${activeTab === 'scanner' ? 'bg-white shadow-sm text-smartBlue' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`flex-1 py-3 px-4 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'scanner' ? 'bg-white shadow-md text-smartBlue scale-[1.02]' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}
           >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m0 11v1m5-14H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2z" /></svg>
             Scan QR Ticket
           </button>
         </div>
@@ -271,23 +292,70 @@ export default function HostPage() {
             </div>
           </>
         ) : (
-          <div className="glass rounded-[2rem] p-8 shadow-glass border border-white/40 flex flex-col items-center min-h-[400px]">
-            <h2 className="text-2xl font-bold mb-2">Check-in / Check-out</h2>
-            <p className="text-gray-500 text-center mb-8 max-w-md">
-              Scan a driver's unique QR ticket upon arrival to start the billing timer. Scan it again when they leave to finalize the payment automatically.
-            </p>
+          <div className="glass rounded-[2.5rem] p-10 shadow-glass border border-white/40 flex flex-col items-center min-h-[500px] relative overflow-hidden">
+            {/* Background decorative elements */}
+            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-smartBlue to-transparent opacity-20"></div>
+
+            <div className="text-center mb-10 max-w-md">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-smartBlue/10 text-smartBlue mb-4">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m0 11v1m5-14H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2z" /></svg>
+              </div>
+              <h2 className="text-3xl font-extrabold text-gray-900 mb-3">Entrance Verification</h2>
+              <p className="text-gray-500 font-medium leading-relaxed">
+                Scan arrival/departure tickets to automate billing. Verification happens in real-time with end-to-end encryption.
+              </p>
+            </div>
 
             {scanMessage && (
-              <div className={`mb-6 p-4 rounded-xl text-center font-medium max-w-sm w-full shadow-sm ${scanMessage.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
-                scanMessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
-                  'bg-blue-50 text-blue-700 border border-blue-200'
+              <div className={`mb-8 p-6 rounded-[2rem] shadow-2xl transform transition-all border-2 w-full max-w-md ${scanMessage.type === 'success' ? 'bg-green-50 border-green-200' :
+                scanMessage.type === 'error' ? 'bg-red-50 border-red-200' :
+                  'bg-blue-50 border-blue-200'
                 }`}>
-                {scanMessage.text}
+                <p className={`text-center font-bold text-lg mb-4 ${scanMessage.type === 'success' ? 'text-green-800' : scanMessage.type === 'error' ? 'text-red-800' : 'text-blue-800'}`}>
+                  {scanMessage.text}
+                </p>
+
+                {scanMessage.details && (
+                  <div className="space-y-3 bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-white/50">
+                    <div className="flex justify-between items-center pb-2 border-b border-gray-200/50">
+                      <span className="text-xs font-bold text-gray-400 uppercase">Customer</span>
+                      <span className="font-bold text-gray-900">{scanMessage.details.name}</span>
+                    </div>
+                    {scanMessage.details.vehicle && (
+                      <div className="flex justify-between items-center pb-2 border-b border-gray-200/50">
+                        <span className="text-xs font-bold text-gray-400 uppercase">Vehicle</span>
+                        <span className="font-bold text-gray-900 uppercase">{scanMessage.details.vehicle}</span>
+                      </div>
+                    )}
+                    {scanMessage.details.slot && (
+                      <div className="flex justify-between items-center pb-2 border-b border-gray-200/50">
+                        <span className="text-xs font-bold text-gray-400 uppercase">Assigned Slot</span>
+                        <span className="font-bold text-smartBlue bg-smartBlue/10 px-2 py-0.5 rounded-lg">{scanMessage.details.slot}</span>
+                      </div>
+                    )}
+                    {scanMessage.details.phone && (
+                      <div className="flex justify-between items-center pb-2 border-b border-gray-200/50">
+                        <span className="text-xs font-bold text-gray-400 uppercase">Contact</span>
+                        <span className="font-bold text-gray-900">{scanMessage.details.phone}</span>
+                      </div>
+                    )}
+                    {scanMessage.details.total && (
+                      <div className="flex justify-between items-center pt-2">
+                        <span className="text-sm font-bold text-gray-900 uppercase">Bill Amount</span>
+                        <span className="text-xl font-black text-green-600">{scanMessage.details.total}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
-            <div className="w-full">
+            <div className="w-full relative z-10">
               <QRScanner onScanSuccess={handleScanSuccess} />
+            </div>
+
+            <div className="mt-8 pt-8 border-t border-gray-100 w-full text-center">
+              <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Powered by SmartPark Vision™ Engine</p>
             </div>
           </div>
         )}
