@@ -170,6 +170,7 @@ router.post("/:id/check-out", protect, authorize("host"), async (req, res) => {
   const summary = calcParkingBill({
     entryTime: booking.entryTime,
     exitTime,
+    expectedDurationHours: booking.expectedDurationHours,
     pricePerHour: booking.spaceId.pricePerHour,
     commissionPercent
   });
@@ -177,6 +178,8 @@ router.post("/:id/check-out", protect, authorize("host"), async (req, res) => {
   booking.exitTime = exitTime;
   booking.durationHours = summary.durationHours;
   booking.totalAmount = summary.totalAmount;
+  booking.commission = summary.commission;
+  booking.hostEarning = summary.hostEarning;
   booking.status = "completed";
   await booking.save();
 

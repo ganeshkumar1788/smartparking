@@ -66,11 +66,19 @@ router.get("/receipt/:bookingId", protect, async (req, res) => {
 router.get("/host/earnings", protect, authorize("host"), async (req, res) => {
   const spaces = await ParkingSpace.find({ hostId: req.user._id }).select("_id");
   const spaceIds = spaces.map((s) => s._id);
-  const bookings = await Booking.find({ spaceId: { $in: spaceIds }, status: "completed" }).select("_id");
+  const bookings = await Booking.find({ spaceId: { $in: spaceIds }, status: "completed" }).select("_id hostEarning");
   const bookingIds = bookings.map((b) => b._id);
   const payments = await Payment.find({ bookingId: { $in: bookingIds }, status: "success" }).sort({ createdAt: -1 });
-  const total = payments.reduce((sum, p) => sum + p.hostEarning, 0);
-  res.json({ totalEarnings: Number(total.toFixed(2)), payments });
+
+  let total = 0;
+
+  // Sum earnings from formal payment records
+  payments.forEach(p => { total += p.hostEarning || 0; });
+
+  // Sum earnings directly stored on completed bookings (QR offline payments)
+  bookings.forEach(b => { total += b.hostEarning || 0; });
+
+  res.json({ totalEarnings: Number(total.toFixed(2)), payments, bookings });
 });
 
 module.exports = router;

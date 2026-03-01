@@ -216,6 +216,8 @@ export default function HostPage() {
               name: booking.userId?.name || "Guest",
               vehicle: booking.vehicleNumber,
               total: `₹${checkOutRes.summary.totalAmount}`,
+              fee: `₹${checkOutRes.summary.commission}`,
+              netEarning: `₹${checkOutRes.summary.hostEarning}`,
               duration: `${checkOutRes.summary.durationHours} hrs`
             }
           });
@@ -246,17 +248,16 @@ export default function HostPage() {
               <h1 className="text-2xl font-bold text-surface-900 dark:text-white">Host Dashboard</h1>
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-sm text-surface-500">Verification Status:</span>
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
-                  user?.hostVerified 
-                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${user?.hostVerified
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                     : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                }`}>
+                  }`}>
                   {user?.hostVerified ? <Icons.check /> : <Icons.clock />}
                   {user?.hostVerified ? "Verified" : "Pending Approval"}
                 </span>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <div className="glass-card px-6 py-4 rounded-2xl bg-gradient-to-br from-accent-teal/10 to-primary-500/10 border-accent-teal/20">
                 <p className="text-xs font-semibold text-surface-500 uppercase tracking-wider mb-1">Total Earnings</p>
@@ -279,11 +280,10 @@ export default function HostPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-3 px-4 text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2 ${
-                activeTab === tab.id 
-                  ? 'bg-white dark:bg-surface-700 text-primary-600 dark:text-primary-400 shadow-sm' 
+              className={`flex-1 py-3 px-4 text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === tab.id
+                  ? 'bg-white dark:bg-surface-700 text-primary-600 dark:text-primary-400 shadow-sm'
                   : 'text-surface-500 hover:text-surface-700 dark:hover:text-surface-300'
-              }`}
+                }`}
             >
               <tab.icon />
               {tab.label}
@@ -302,208 +302,208 @@ export default function HostPage() {
               transition={{ duration: 0.3 }}
               className="space-y-6"
             >
-            <div className="glass-card rounded-2xl p-6">
-              <h2 className="text-lg font-semibold text-surface-900 dark:text-white mb-6">Add New Parking Space</h2>
+              <div className="glass-card rounded-2xl p-6">
+                <h2 className="text-lg font-semibold text-surface-900 dark:text-white mb-6">Add New Parking Space</h2>
 
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="space-y-4">
-                  <form onSubmit={searchLocation} className="flex gap-2">
-                    <div className="relative flex-1">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400">
-                        <Icons.search />
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="space-y-4">
+                    <form onSubmit={searchLocation} className="flex gap-2">
+                      <div className="relative flex-1">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400">
+                          <Icons.search />
+                        </div>
+                        <input
+                          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-900 dark:text-white placeholder-surface-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+                          placeholder="Search city/area to center map"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
                       </div>
-                      <input
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-900 dark:text-white placeholder-surface-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
-                        placeholder="Search city/area to center map"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                      <button
+                        type="submit"
+                        disabled={isSearchingLocation}
+                        className="btn-primary py-2.5 px-4 text-sm disabled:opacity-50"
+                      >
+                        {isSearchingLocation ? (
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <Icons.search />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={useMyLocation}
+                        className="btn-secondary p-2.5"
+                        title="Use GPS"
+                      >
+                        <Icons.location />
+                      </button>
+                    </form>
+
+                    <div className="h-72 rounded-2xl overflow-hidden border border-surface-200 dark:border-surface-700">
+                      <ParkingMap
+                        center={[form.latitude, form.longitude]}
+                        spaces={[{ _id: "preview", latitude: form.latitude, longitude: form.longitude, title: "New Spot Preview", pricePerHour: form.pricePerHour || 0 }]}
+                        onMapClick={handleMapClick}
                       />
                     </div>
-                    <button 
-                      type="submit" 
-                      disabled={isSearchingLocation} 
-                      className="btn-primary py-2.5 px-4 text-sm disabled:opacity-50"
-                    >
-                      {isSearchingLocation ? (
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <Icons.search />
-                      )}
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={useMyLocation} 
-                      className="btn-secondary p-2.5"
-                      title="Use GPS"
-                    >
-                      <Icons.location />
+                    <p className="text-xs text-center text-surface-500">Click on the map to set the exact location</p>
+                  </div>
+
+                  <form onSubmit={addSpace} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Parking Title</label>
+                      <input
+                        required
+                        className="input-field"
+                        placeholder="e.g. My Driveway"
+                        value={form.title}
+                        onChange={(e) => setForm((s) => ({ ...s, title: e.target.value }))}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Address</label>
+                      <input
+                        required
+                        className="input-field"
+                        placeholder="e.g. 123 Main St, New Delhi"
+                        value={form.address}
+                        onChange={(e) => setForm((s) => ({ ...s, address: e.target.value }))}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Latitude</label>
+                        <input
+                          required
+                          type="number"
+                          step="any"
+                          className="input-field"
+                          value={form.latitude}
+                          onChange={(e) => setForm((s) => ({ ...s, latitude: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Longitude</label>
+                        <input
+                          required
+                          type="number"
+                          step="any"
+                          className="input-field"
+                          value={form.longitude}
+                          onChange={(e) => setForm((s) => ({ ...s, longitude: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Price per Hour (₹)</label>
+                      <input
+                        required
+                        type="number"
+                        min="0"
+                        className="input-field"
+                        placeholder="50"
+                        value={form.pricePerHour}
+                        onChange={(e) => setForm((s) => ({ ...s, pricePerHour: e.target.value }))}
+                      />
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-surface-50 dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700">
+                      <label className="block text-sm font-semibold text-surface-900 dark:text-white mb-3">Parking Capacity</label>
+                      {form.capacities.map((cap, idx) => (
+                        <div key={idx} className="flex gap-2 mb-3">
+                          <select
+                            className="flex-1 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-white"
+                            value={cap.type}
+                            onChange={(e) => updateCapacity(idx, 'type', e.target.value)}
+                          >
+                            <option value="car">Car</option>
+                            <option value="bike">Bike</option>
+                            <option value="ev">EV Charging</option>
+                            <option value="truck">Truck</option>
+                          </select>
+                          <input
+                            type="number"
+                            min="1"
+                            className="w-24 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-white"
+                            value={cap.count}
+                            onChange={(e) => updateCapacity(idx, 'count', Number(e.target.value))}
+                          />
+                          {form.capacities.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => setForm({ ...form, capacities: form.capacities.filter((_, i) => i !== idx) })}
+                              className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-colors"
+                            >
+                              <Icons.close />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, capacities: [...form.capacities, { type: 'car', count: 1 }] })}
+                        className="flex items-center gap-1 text-sm font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700"
+                      >
+                        <Icons.plus />
+                        Add Vehicle Type
+                      </button>
+                    </div>
+
+                    {error && (
+                      <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 text-sm">
+                        {error}
+                      </div>
+                    )}
+
+                    <button type="submit" className="w-full btn-primary py-3">
+                      Publish Space
                     </button>
                   </form>
-
-                  <div className="h-72 rounded-2xl overflow-hidden border border-surface-200 dark:border-surface-700">
-                    <ParkingMap
-                      center={[form.latitude, form.longitude]}
-                      spaces={[{ _id: "preview", latitude: form.latitude, longitude: form.longitude, title: "New Spot Preview", pricePerHour: form.pricePerHour || 0 }]}
-                      onMapClick={handleMapClick}
-                    />
-                  </div>
-                  <p className="text-xs text-center text-surface-500">Click on the map to set the exact location</p>
                 </div>
+              </div>
 
-                <form onSubmit={addSpace} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Parking Title</label>
-                    <input 
-                      required 
-                      className="input-field" 
-                      placeholder="e.g. My Driveway" 
-                      value={form.title} 
-                      onChange={(e) => setForm((s) => ({ ...s, title: e.target.value }))} 
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Address</label>
-                    <input 
-                      required 
-                      className="input-field" 
-                      placeholder="e.g. 123 Main St, New Delhi" 
-                      value={form.address} 
-                      onChange={(e) => setForm((s) => ({ ...s, address: e.target.value }))} 
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Latitude</label>
-                      <input 
-                        required 
-                        type="number" 
-                        step="any" 
-                        className="input-field" 
-                        value={form.latitude} 
-                        onChange={(e) => setForm((s) => ({ ...s, latitude: e.target.value }))} 
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Longitude</label>
-                      <input 
-                        required 
-                        type="number" 
-                        step="any" 
-                        className="input-field" 
-                        value={form.longitude} 
-                        onChange={(e) => setForm((s) => ({ ...s, longitude: e.target.value }))} 
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Price per Hour (₹)</label>
-                    <input 
-                      required 
-                      type="number" 
-                      min="0" 
-                      className="input-field" 
-                      placeholder="50" 
-                      value={form.pricePerHour} 
-                      onChange={(e) => setForm((s) => ({ ...s, pricePerHour: e.target.value }))} 
-                    />
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-surface-50 dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700">
-                    <label className="block text-sm font-semibold text-surface-900 dark:text-white mb-3">Parking Capacity</label>
-                    {form.capacities.map((cap, idx) => (
-                      <div key={idx} className="flex gap-2 mb-3">
-                        <select 
-                          className="flex-1 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-white"
-                          value={cap.type} 
-                          onChange={(e) => updateCapacity(idx, 'type', e.target.value)}
-                        >
-                          <option value="car">Car</option>
-                          <option value="bike">Bike</option>
-                          <option value="ev">EV Charging</option>
-                          <option value="truck">Truck</option>
-                        </select>
-                        <input 
-                          type="number" 
-                          min="1" 
-                          className="w-24 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-white"
-                          value={cap.count} 
-                          onChange={(e) => updateCapacity(idx, 'count', Number(e.target.value))} 
-                        />
-                        {form.capacities.length > 1 && (
-                          <button 
-                            type="button" 
-                            onClick={() => setForm({ ...form, capacities: form.capacities.filter((_, i) => i !== idx) })} 
-                            className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-colors"
-                          >
-                            <Icons.close />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                    <button 
-                      type="button" 
-                      onClick={() => setForm({ ...form, capacities: [...form.capacities, { type: 'car', count: 1 }] })} 
-                      className="flex items-center gap-1 text-sm font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700"
+              <div className="glass-card rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-semibold text-surface-900 dark:text-white">Your Active Listings</h2>
+                  <span className="text-sm text-surface-500">{spaces.length} spaces</span>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {spaces.map((space, index) => (
+                    <motion.article
+                      key={space._id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="glass-card rounded-xl p-4 hover:border-primary-300 dark:hover:border-primary-700 transition-all"
                     >
-                      <Icons.plus />
-                      Add Vehicle Type
-                    </button>
-                  </div>
-                  
-                  {error && (
-                    <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 text-sm">
-                      {error}
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-semibold text-surface-900 dark:text-white">{space.title}</h3>
+                        <span className="text-xs font-semibold bg-accent-teal/10 text-accent-teal px-2.5 py-1 rounded-full">
+                          ₹{space.pricePerHour}/hr
+                        </span>
+                      </div>
+                      <p className="text-sm text-surface-500 dark:text-surface-400">{space.address}</p>
+                      <div className="mt-3 flex items-center gap-2 text-xs text-surface-400">
+                        <Icons.car />
+                        <span>{space.slots?.length || 0} slots available</span>
+                      </div>
+                    </motion.article>
+                  ))}
+                  {spaces.length === 0 && (
+                    <div className="md:col-span-2 text-center py-12 border-2 border-dashed border-surface-200 dark:border-surface-700 rounded-2xl">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-surface-100 dark:bg-surface-800 flex items-center justify-center text-primary-600">
+                        <Icons.building />
+                      </div>
+                      <h4 className="font-semibold text-surface-900 dark:text-white mb-2">No spaces yet</h4>
+                      <p className="text-sm text-surface-500">Use the form above to add your first parking space.</p>
                     </div>
                   )}
-                  
-                  <button type="submit" className="w-full btn-primary py-3">
-                    Publish Space
-                  </button>
-                </form>
+                </div>
               </div>
-            </div>
-
-            <div className="glass-card rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-surface-900 dark:text-white">Your Active Listings</h2>
-                <span className="text-sm text-surface-500">{spaces.length} spaces</span>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                {spaces.map((space, index) => (
-                  <motion.article 
-                    key={space._id} 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="glass-card rounded-xl p-4 hover:border-primary-300 dark:hover:border-primary-700 transition-all"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-surface-900 dark:text-white">{space.title}</h3>
-                      <span className="text-xs font-semibold bg-accent-teal/10 text-accent-teal px-2.5 py-1 rounded-full">
-                        ₹{space.pricePerHour}/hr
-                      </span>
-                    </div>
-                    <p className="text-sm text-surface-500 dark:text-surface-400">{space.address}</p>
-                    <div className="mt-3 flex items-center gap-2 text-xs text-surface-400">
-                      <Icons.car />
-                      <span>{space.slots?.length || 0} slots available</span>
-                    </div>
-                  </motion.article>
-                ))}
-                {spaces.length === 0 && (
-                  <div className="md:col-span-2 text-center py-12 border-2 border-dashed border-surface-200 dark:border-surface-700 rounded-2xl">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-surface-100 dark:bg-surface-800 flex items-center justify-center text-primary-600">
-                      <Icons.building />
-                    </div>
-                    <h4 className="font-semibold text-surface-900 dark:text-white mb-2">No spaces yet</h4>
-                    <p className="text-sm text-surface-500">Use the form above to add your first parking space.</p>
-                  </div>
-                )}
-              </div>
-            </div>
             </motion.div>
           )}
 
@@ -534,17 +534,15 @@ export default function HostPage() {
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    className={`mb-6 p-6 rounded-2xl w-full max-w-md ${
-                      scanMessage.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800' :
-                      scanMessage.type === 'error' ? 'bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800' :
-                      'bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800'
-                    }`}
+                    className={`mb-6 p-6 rounded-2xl w-full max-w-md ${scanMessage.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800' :
+                        scanMessage.type === 'error' ? 'bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800' :
+                          'bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800'
+                      }`}
                   >
-                    <p className={`text-center font-bold text-lg mb-4 ${
-                      scanMessage.type === 'success' ? 'text-emerald-800 dark:text-emerald-400' : 
-                      scanMessage.type === 'error' ? 'text-rose-800 dark:text-rose-400' : 
-                      'text-primary-800 dark:text-primary-400'
-                    }`}>
+                    <p className={`text-center font-bold text-lg mb-4 ${scanMessage.type === 'success' ? 'text-emerald-800 dark:text-emerald-400' :
+                        scanMessage.type === 'error' ? 'text-rose-800 dark:text-rose-400' :
+                          'text-primary-800 dark:text-primary-400'
+                      }`}>
                       {scanMessage.text}
                     </p>
 
@@ -567,10 +565,24 @@ export default function HostPage() {
                           </div>
                         )}
                         {scanMessage.details.total && (
-                          <div className="flex justify-between items-center pt-2">
-                            <span className="font-semibold text-surface-900 dark:text-white">Bill Amount</span>
-                            <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{scanMessage.details.total}</span>
-                          </div>
+                          <>
+                            <div className="flex justify-between items-center pt-2 mt-2 border-t border-surface-200 dark:border-surface-700">
+                              <span className="text-sm font-bold text-surface-900 dark:text-white uppercase">Gross Total</span>
+                              <span className="text-lg font-bold text-surface-700 dark:text-surface-300">{scanMessage.details.total}</span>
+                            </div>
+                            {scanMessage.details.fee && (
+                              <div className="flex justify-between items-center pb-2 border-b border-surface-200 dark:border-surface-700">
+                                <span className="text-xs font-bold text-rose-500 uppercase">Platform Fee</span>
+                                <span className="font-bold text-rose-500">-{scanMessage.details.fee}</span>
+                              </div>
+                            )}
+                            {scanMessage.details.netEarning && (
+                              <div className="flex justify-between items-center pt-2">
+                                <span className="text-sm font-bold text-surface-900 dark:text-white uppercase">Your Earnings</span>
+                                <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{scanMessage.details.netEarning}</span>
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     )}

@@ -2,111 +2,141 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
+import jsQR from "jsqr";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function QRScanner({ onScanSuccess, onScanError }) {
-    const scannerRef = useRef(null);
-    const html5QrCodeRef = useRef(null);
     const [isScanning, setIsScanning] = useState(false);
     const [hasCamera, setHasCamera] = useState(false);
     const [cameraError, setCameraError] = useState(null);
 
-    const stopScanner = useCallback(async () => {
-        try {
-            if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
-                await html5QrCodeRef.current.stop();
-            }
-            if (html5QrCodeRef.current) {
-                await html5QrCodeRef.current.clear();
-            }
-        } catch (e) {
-            // Ignore cleanup errors
+    const videoRef = useRef(null);
+    const canvasRef = useRef(null);
+    const streamRef = useRef(null);
+    const animationFrameId = useRef(null);
+
+    const stopScanner = useCallback(() => {
+        if (animationFrameId.current) {
+            cancelAnimationFrame(animationFrameId.current);
+            animationFrameId.current = null;
         }
-        html5QrCodeRef.current = null;
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
         setHasCamera(false);
     }, []);
 
-    const startCamera = useCallback(async (html5QrCode, cameraIdOrConstraint, config) => {
-        const onSuccess = (decodedText, decodedResult) => {
-            if (onScanSuccess) {
-                html5QrCode.pause(true);
-                onScanSuccess(decodedText, decodedResult, () => {
-                    try { html5QrCode.resume(); } catch (e) { }
-                });
+    const initCamera = useCallback(async () => {
+        setCameraError(null);
+        setHasCamera(false);
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment" }
+            });
+
+            streamRef.current = stream;
+
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                // Important: wait for video to be ready before playing
+                videoRef.current.onloadedmetadata = () => {
+                    videoRef.current.play().catch(e => {
+                        console.error("Error playing video:", e);
+                        setCameraError("Failed to play video stream");
+                    });
+                    setHasCamera(true);
+                    startScanning();
+                };
             }
-        };
-        const onError = () => { }; // Suppress per-frame "no QR found" errors
+        } catch (err) {
+            console.error("Camera error:", err);
+            setCameraError(err.message || "Could not access camera. Please check permissions.");
+            if (onScanError) onScanError(err);
+        }
+    }, [onScanError]);
 
-        await html5QrCode.start(cameraIdOrConstraint, config, onSuccess, onError);
-    }, [onScanSuccess]);
+    const startScanning = useCallback(() => {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        if (!video || !canvas) return;
 
-    useEffect(() => {
-        if (!isScanning) return;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        let barcodeDetector = null;
 
-        let cancelled = false;
-
-        const init = async () => {
-            setCameraError(null);
-            setHasCamera(false);
-
-            // Wait a tick for the DOM element to mount
-            await new Promise(r => setTimeout(r, 100));
-
-            if (cancelled || !scannerRef.current) return;
-
-            const html5QrCode = new Html5Qrcode("qr-reader");
-            html5QrCodeRef.current = html5QrCode;
-
-            const config = {
-                fps: 20,
-                qrbox: (w, h) => {
-                    const size = Math.floor(Math.min(w, h) * 0.72);
-                    return { width: size, height: size };
-                },
-                aspectRatio: 1.0,
-                experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-            };
-
-            // 1st attempt: back/environment camera (works on phones and some laptops)
+        if ('BarcodeDetector' in window) {
             try {
-                await startCamera(html5QrCode, { facingMode: "environment" }, config);
-                if (!cancelled) setHasCamera(true);
-                return;
-            } catch (e1) {
-                console.warn("environment camera failed, trying user-facing:", e1);
+                barcodeDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
+            } catch (e) {
+                console.warn("BarcodeDetector setup failed, falling back to jsQR");
             }
+        }
 
-            // 2nd attempt: front camera (most common on laptops)
-            try {
-                await startCamera(html5QrCode, { facingMode: "user" }, config);
-                if (!cancelled) setHasCamera(true);
-                return;
-            } catch (e2) {
-                console.warn("user camera failed, enumerating devices:", e2);
-            }
+        const scanFrame = async () => {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                // Resize canvas to match video stream dimensions once ready
+                if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                }
 
-            // 3rd attempt: enumerate and use first available camera
-            try {
-                const cameras = await Html5Qrcode.getCameras();
-                if (!cameras || cameras.length === 0) throw new Error("No cameras found");
-                await startCamera(html5QrCode, cameras[0].id, config);
-                if (!cancelled) setHasCamera(true);
-            } catch (e3) {
-                console.error("All camera attempts failed:", e3);
-                if (!cancelled) {
-                    setCameraError("Could not access camera. Please check permissions.");
-                    if (onScanError) onScanError(e3);
+                try {
+                    // Method 1: Try hardware-accelerated BarcodeDetector first (Chrome/Android)
+                    if (barcodeDetector) {
+                        const barcodes = await barcodeDetector.detect(video);
+                        if (barcodes.length > 0) {
+                            handleSuccess(barcodes[0].rawValue);
+                            return; // Stop loop
+                        }
+                    }
+                    // Method 2: High-speed jsQR fallback (Firefox/Safari/Older devices)
+                    else {
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                            inversionAttempts: "dontInvert",
+                        });
+
+                        if (code) {
+                            handleSuccess(code.data);
+                            return; // Stop loop
+                        }
+                    }
+                } catch (e) {
+                    // Ignore per-frame processing errors, just continue scanning
                 }
             }
+
+            // Loop instantly for the next frame to ensure maximum responsiveness
+            animationFrameId.current = requestAnimationFrame(scanFrame);
         };
 
-        init();
+        const handleSuccess = (decodedText) => {
+            if (onScanSuccess) {
+                onScanSuccess(decodedText, null, () => { });
+            }
+            stopScanner();
+            setIsScanning(false);
+        };
+
+        // Start the engine
+        animationFrameId.current = requestAnimationFrame(scanFrame);
+
+    }, [onScanSuccess, stopScanner]);
+
+    useEffect(() => {
+        if (isScanning) {
+            // Need a tiny delay to ensure video/canvas refs are mounted before init
+            setTimeout(initCamera, 50);
+        } else {
+            stopScanner();
+        }
 
         return () => {
-            cancelled = true;
             stopScanner();
         };
-    }, [isScanning, startCamera, stopScanner, onScanError]);
+    }, [isScanning, initCamera, stopScanner]);
 
     const handleStop = () => {
         setIsScanning(false);
@@ -152,7 +182,7 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
                         className="w-full max-w-md bg-gray-900 rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/10"
                     >
                         {/* Header bar */}
-                        <div className="bg-smartBlue/90 backdrop-blur-sm text-white text-center py-4 font-bold relative">
+                        <div className="bg-smartBlue/90 backdrop-blur-sm text-white text-center py-4 font-bold relative flex items-center justify-center min-h-[56px]">
                             <span className="flex items-center justify-center gap-2">
                                 <span className={`w-2.5 h-2.5 rounded-full transition-colors duration-500 ${hasCamera ? 'bg-red-400 animate-pulse' : cameraError ? 'bg-orange-400' : 'bg-yellow-300 animate-pulse'}`}></span>
                                 {hasCamera ? 'Live Lens Active' : cameraError ? 'Camera Error' : 'Starting Camera…'}
@@ -166,8 +196,16 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
                         </div>
 
                         {/* Camera viewport */}
-                        <div className="relative bg-black min-h-[400px] flex items-start justify-center overflow-hidden">
-                            <div id="qr-reader" ref={scannerRef} className="w-full !border-none"></div>
+                        <div className="relative bg-black h-[400px] flex items-center justify-center overflow-hidden">
+                            <video
+                                id="qr-reader"
+                                ref={videoRef}
+                                className="w-full h-full object-cover"
+                                autoPlay
+                                playsInline
+                                muted
+                            ></video>
+                            <canvas ref={canvasRef} className="hidden" />
 
                             {/* Animated scan line overlay (shown only when camera is live) */}
                             {hasCamera && (
@@ -202,27 +240,6 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
             </AnimatePresence>
 
             <style jsx global>{`
-                #qr-reader {
-                    border: none !important;
-                    width: 100% !important;
-                    background: transparent !important;
-                }
-                #qr-reader video {
-                    width: 100% !important;
-                    max-height: 450px !important;
-                    object-fit: cover !important;
-                    display: block !important;
-                }
-                /* Hide every built-in UI chrome the library renders */
-                #qr-reader__header_message,
-                #qr-reader__dashboard,
-                #qr-reader__filescan_input,
-                #qr-reader__status_span,
-                #qr-reader__camera_selection,
-                .html5-qrcode-element,
-                button[id^="html5-qrcode-button"] {
-                    display: none !important;
-                }
                 .animate-scan-line {
                     animation: scanLine 2.5s ease-in-out infinite;
                 }

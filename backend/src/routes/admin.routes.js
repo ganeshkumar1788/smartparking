@@ -59,16 +59,26 @@ router.get("/analytics", async (req, res) => {
     ParkingSpace.countDocuments(),
     Payment.countDocuments({ status: "success" })
   ]);
+
   const payments = await Payment.find({ status: "success" }).select("amount commission hostEarning");
-  const revenue = payments.reduce(
-    (acc, p) => {
-      acc.gross += p.amount;
-      acc.commission += p.commission;
-      acc.hostPayout += p.hostEarning;
-      return acc;
-    },
-    { gross: 0, commission: 0, hostPayout: 0 }
-  );
+  const completedBookings = await Booking.find({ status: "completed" }).select("totalAmount commission hostEarning");
+
+  let gross = 0;
+  let commission = 0;
+  let hostPayout = 0;
+
+  payments.forEach(p => {
+    gross += p.amount || 0;
+    commission += p.commission || 0;
+    hostPayout += p.hostEarning || 0;
+  });
+
+  completedBookings.forEach(b => {
+    gross += b.totalAmount || 0;
+    commission += b.commission || 0;
+    hostPayout += b.hostEarning || 0;
+  });
+
   res.json({
     metrics: {
       userCount,
@@ -77,9 +87,9 @@ router.get("/analytics", async (req, res) => {
       bookingCount,
       spaceCount,
       paymentCount,
-      grossRevenue: Number(revenue.gross.toFixed(2)),
-      platformCommission: Number(revenue.commission.toFixed(2)),
-      hostPayout: Number(revenue.hostPayout.toFixed(2))
+      grossRevenue: Number(gross.toFixed(2)),
+      platformCommission: Number(commission.toFixed(2)),
+      hostPayout: Number(hostPayout.toFixed(2))
     }
   });
 });

@@ -101,7 +101,7 @@ const StatusBadge = ({ status }) => {
     pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800",
     cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border-rose-200 dark:border-rose-800",
   };
-  
+
   return (
     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border capitalize ${styles[status] || styles.pending}`}>
       {status}
@@ -377,11 +377,10 @@ export default function DriverPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
-                    activeTab === tab.id
-                      ? "bg-white dark:bg-surface-700 text-primary-600 dark:text-primary-400 shadow-sm"
-                      : "text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-white"
-                  }`}
+                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === tab.id
+                    ? "bg-white dark:bg-surface-700 text-primary-600 dark:text-primary-400 shadow-sm"
+                    : "text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-white"
+                    }`}
                 >
                   <tab.icon />
                   {tab.label}
@@ -457,9 +456,9 @@ export default function DriverPage() {
                     />
                   </div>
                   <div className="flex gap-2">
-                    <button 
-                      type="submit" 
-                      disabled={isSearchingLocation} 
+                    <button
+                      type="submit"
+                      disabled={isSearchingLocation}
                       className="btn-primary flex items-center gap-2 disabled:opacity-50"
                     >
                       {isSearchingLocation ? (
@@ -474,9 +473,9 @@ export default function DriverPage() {
                         </>
                       )}
                     </button>
-                    <button 
-                      type="button" 
-                      onClick={useMyLocation} 
+                    <button
+                      type="button"
+                      onClick={useMyLocation}
                       className="btn-secondary p-3"
                       title="Use My GPS Location"
                     >
@@ -490,20 +489,20 @@ export default function DriverPage() {
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400">
                       <Icons.money />
                     </div>
-                    <input 
+                    <input
                       className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-900 dark:text-white placeholder-surface-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all text-sm"
-                      placeholder="Max price/hour (₹)" 
-                      value={filters.maxPrice} 
-                      onChange={(e) => setFilters((s) => ({ ...s, maxPrice: e.target.value }))} 
+                      placeholder="Max price/hour (₹)"
+                      value={filters.maxPrice}
+                      onChange={(e) => setFilters((s) => ({ ...s, maxPrice: e.target.value }))}
                     />
                   </div>
                   <div className="relative">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400">
                       <Icons.car />
                     </div>
-                    <select 
+                    <select
                       className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all text-sm appearance-none cursor-pointer"
-                      value={filters.vehicleType} 
+                      value={filters.vehicleType}
                       onChange={(e) => setFilters((s) => ({ ...s, vehicleType: e.target.value }))}
                     >
                       <option value="">All vehicle types</option>
@@ -517,7 +516,7 @@ export default function DriverPage() {
 
               <div className="grid lg:grid-cols-3 gap-6">
                 {/* Map View */}
-                <motion.div 
+                <motion.div
                   className="lg:col-span-2 glass-card overflow-hidden rounded-2xl p-1 h-[500px] lg:h-[600px]"
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -530,7 +529,7 @@ export default function DriverPage() {
                 </motion.div>
 
                 {/* List View */}
-                <motion.div 
+                <motion.div
                   className="glass-card rounded-2xl p-4 overflow-hidden flex flex-col h-[500px] lg:h-[600px]"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -542,7 +541,7 @@ export default function DriverPage() {
                       {nearbySpaces.length} found
                     </span>
                   </div>
-                  
+
                   <div className="flex-1 overflow-y-auto space-y-3 pr-1">
                     {isFetching ? (
                       <>
@@ -553,8 +552,8 @@ export default function DriverPage() {
                         {nearbySpaces.map((space, index) => {
                           const dist = calculateDistance(mapCenter[0], mapCenter[1], space.latitude, space.longitude).toFixed(1);
                           return (
-                            <motion.article 
-                              key={space._id} 
+                            <motion.article
+                              key={space._id}
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: index * 0.05 }}
@@ -625,11 +624,11 @@ export default function DriverPage() {
                   <h2 className="text-lg font-semibold text-surface-900 dark:text-white">My Booking History</h2>
                   <span className="text-sm text-surface-500">{bookings.length} bookings</span>
                 </div>
-                
+
                 <div className="grid gap-4 md:grid-cols-2">
                   {bookings.map((b, index) => (
-                    <motion.div 
-                      key={b._id} 
+                    <motion.div
+                      key={b._id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
@@ -642,7 +641,7 @@ export default function DriverPage() {
                         </div>
                         <StatusBadge status={b.status} />
                       </div>
-                      
+
                       <div className="space-y-2 text-sm mb-4">
                         {b.vehicleNumber && (
                           <div className="flex items-center gap-2 text-surface-600 dark:text-surface-400">
@@ -660,15 +659,20 @@ export default function DriverPage() {
                           <Icons.clock />
                           <span>{b.durationHours || b.expectedDurationHours || 0} hours</span>
                         </div>
-                        <div className="flex items-center gap-2 text-surface-600 dark:text-surface-400">
-                          <Icons.money />
-                          <span className="font-semibold text-surface-900 dark:text-white">₹{b.totalAmount || (b.spaceId?.pricePerHour * b.expectedDurationHours) || 0}</span>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2 text-surface-600 dark:text-surface-400">
+                            <Icons.money />
+                            <span className="font-semibold text-surface-900 dark:text-white">₹{b.totalAmount || (b.spaceId?.pricePerHour * b.expectedDurationHours) || 0}</span>
+                          </div>
+                          {b.status === "completed" && b.commission > 0 && (
+                            <div className="text-[10px] text-surface-500 mt-1 font-medium pl-7">Includes ₹{b.commission} platform fee</div>
+                          )}
                         </div>
                       </div>
 
                       {b.status === "completed" && !b.isReviewed && (
-                        <button 
-                          onClick={() => { setReviewBooking(b); setReviewForm({ rating: 5, comment: "" }); }} 
+                        <button
+                          onClick={() => { setReviewBooking(b); setReviewForm({ rating: 5, comment: "" }); }}
                           className="w-full py-2 text-sm font-semibold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 rounded-xl hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors"
                         >
                           Leave a Review
@@ -689,7 +693,7 @@ export default function DriverPage() {
                       )}
                     </motion.div>
                   ))}
-                  
+
                   {bookings.length === 0 && (
                     <div className="md:col-span-2 text-center py-12 border-2 border-dashed border-surface-200 dark:border-surface-700 rounded-2xl">
                       <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-surface-100 dark:bg-surface-800 flex items-center justify-center text-primary-600">
@@ -697,7 +701,7 @@ export default function DriverPage() {
                       </div>
                       <h4 className="font-semibold text-surface-900 dark:text-white mb-2">No bookings yet</h4>
                       <p className="text-sm text-surface-500 mb-4">Switch to the Explore tab to find and book parking spaces.</p>
-                      <button 
+                      <button
                         onClick={() => setActiveTab("explore")}
                         className="btn-primary text-sm"
                       >
@@ -745,23 +749,23 @@ export default function DriverPage() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Vehicle Number</label>
-                      <input 
-                        required 
-                        className="input-field uppercase" 
-                        placeholder="MH 01 AB 1234" 
-                        value={bookingForm.vehicleNumber} 
-                        onChange={(e) => setBookingForm({ ...bookingForm, vehicleNumber: e.target.value })} 
+                      <input
+                        required
+                        className="input-field uppercase"
+                        placeholder="MH 01 AB 1234"
+                        value={bookingForm.vehicleNumber}
+                        onChange={(e) => setBookingForm({ ...bookingForm, vehicleNumber: e.target.value })}
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Phone Number</label>
-                      <input 
-                        required 
-                        type="tel" 
-                        className="input-field" 
-                        placeholder="9876543210" 
-                        value={bookingForm.phoneNumber} 
-                        onChange={(e) => setBookingForm({ ...bookingForm, phoneNumber: e.target.value })} 
+                      <input
+                        required
+                        type="tel"
+                        className="input-field"
+                        placeholder="9876543210"
+                        value={bookingForm.phoneNumber}
+                        onChange={(e) => setBookingForm({ ...bookingForm, phoneNumber: e.target.value })}
                       />
                     </div>
                   </div>
@@ -769,20 +773,20 @@ export default function DriverPage() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Start Time</label>
-                      <input 
-                        type="datetime-local" 
-                        className="input-field text-sm" 
-                        value={bookingForm.scheduledStart} 
-                        onChange={(e) => setBookingForm({ ...bookingForm, scheduledStart: e.target.value })} 
+                      <input
+                        type="datetime-local"
+                        className="input-field text-sm"
+                        value={bookingForm.scheduledStart}
+                        onChange={(e) => setBookingForm({ ...bookingForm, scheduledStart: e.target.value })}
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">End Time</label>
-                      <input 
-                        type="datetime-local" 
-                        className="input-field text-sm" 
-                        value={bookingForm.scheduledEnd} 
-                        onChange={(e) => setBookingForm({ ...bookingForm, scheduledEnd: e.target.value })} 
+                      <input
+                        type="datetime-local"
+                        className="input-field text-sm"
+                        value={bookingForm.scheduledEnd}
+                        onChange={(e) => setBookingForm({ ...bookingForm, scheduledEnd: e.target.value })}
                       />
                     </div>
                   </div>
@@ -790,14 +794,14 @@ export default function DriverPage() {
                   {(!bookingForm.scheduledStart || !bookingForm.scheduledEnd) && (
                     <div>
                       <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Duration (Hours)</label>
-                      <input 
-                        required 
-                        type="number" 
-                        min="1" 
-                        max="72" 
-                        className="input-field" 
-                        value={bookingForm.expectedDurationHours} 
-                        onChange={(e) => setBookingForm({ ...bookingForm, expectedDurationHours: Number(e.target.value) })} 
+                      <input
+                        required
+                        type="number"
+                        min="1"
+                        max="72"
+                        className="input-field"
+                        value={bookingForm.expectedDurationHours}
+                        onChange={(e) => setBookingForm({ ...bookingForm, expectedDurationHours: Number(e.target.value) })}
                       />
                     </div>
                   )}
@@ -842,13 +846,12 @@ export default function DriverPage() {
                               key={slot.slotId}
                               disabled={isBooked}
                               onClick={() => setBookingForm({ ...bookingForm, slotId: slot.slotId })}
-                              className={`p-3 rounded-xl text-center transition-all ${
-                                isBooked 
-                                  ? 'bg-rose-50 text-rose-400 border-2 border-rose-200 cursor-not-allowed' 
-                                  : isSelected 
-                                    ? 'bg-primary-500 text-white border-2 border-primary-500 shadow-lg shadow-primary-500/30' 
-                                    : 'bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-300 border-2 border-surface-200 dark:border-surface-700 hover:border-primary-400'
-                              }`}
+                              className={`p-3 rounded-xl text-center transition-all ${isBooked
+                                ? 'bg-rose-50 text-rose-400 border-2 border-rose-200 cursor-not-allowed'
+                                : isSelected
+                                  ? 'bg-primary-500 text-white border-2 border-primary-500 shadow-lg shadow-primary-500/30'
+                                  : 'bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-300 border-2 border-surface-200 dark:border-surface-700 hover:border-primary-400'
+                                }`}
                             >
                               <div className="text-sm font-bold">{slot.slotId}</div>
                               <div className="text-[10px] uppercase opacity-80">{slot.vehicleType}</div>
@@ -859,9 +862,9 @@ export default function DriverPage() {
                     </div>
                   )}
 
-                  <button 
-                    disabled={isBooking || (selectedSpace?.slots?.length > 0 && !bookingForm.slotId)} 
-                    type="submit" 
+                  <button
+                    disabled={isBooking || (selectedSpace?.slots?.length > 0 && !bookingForm.slotId)}
+                    type="submit"
                     className="w-full btn-primary py-4 text-base disabled:opacity-50"
                   >
                     {isBooking ? (
@@ -932,9 +935,9 @@ export default function DriverPage() {
                     />
                   </div>
 
-                  <button 
-                    disabled={isSubmittingReview} 
-                    type="submit" 
+                  <button
+                    disabled={isSubmittingReview}
+                    type="submit"
                     className="w-full btn-primary py-4 disabled:opacity-50"
                   >
                     {isSubmittingReview ? (

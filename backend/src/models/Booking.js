@@ -19,6 +19,8 @@ const bookingSchema = new mongoose.Schema(
     exitTime: { type: Date, default: null },
     durationHours: { type: Number, default: 0 },
     totalAmount: { type: Number, default: 0 },
+    commission: { type: Number, default: 0 },
+    hostEarning: { type: Number, default: 0 },
     qrToken: { type: String, required: true },
     qrCodeDataUrl: { type: String, default: null }, // Optional caching of the rendered code
     isReviewed: { type: Boolean, default: false }
