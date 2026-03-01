@@ -73,13 +73,19 @@ export default function RegisterPage() {
             <div className="pt-2">
               <label className="mb-2 block text-sm font-medium text-gray-700">I want to use SmartPark as a:</label>
               <div className="grid grid-cols-2 gap-3">
-                <label className={`cursor-pointer rounded-xl border-2 p-3 text-center transition-all ${form.role === 'driver' ? 'border-smartBlue bg-smartBlue/5 text-smartBlue font-semibold' : 'border-gray-200 bg-white/50 text-gray-600 hover:border-gray-300'}`}>
+                <label className={`cursor-pointer rounded-xl border-2 p-3 text-center transition-all flex items-center justify-center gap-2 ${form.role === 'driver' ? 'border-smartBlue bg-smartBlue/5 text-smartBlue font-semibold' : 'border-gray-200 bg-white/50 text-gray-600 hover:border-gray-300'}`}>
                   <input type="radio" className="hidden" name="role" value="driver" checked={form.role === "driver"} onChange={(e) => setForm((s) => ({ ...s, role: e.target.value }))} />
-                  🚗 Driver
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
+                  Driver
                 </label>
-                <label className={`cursor-pointer rounded-xl border-2 p-3 text-center transition-all ${form.role === 'host' ? 'border-smartBlue bg-smartBlue/5 text-smartBlue font-semibold' : 'border-gray-200 bg-white/50 text-gray-600 hover:border-gray-300'}`}>
+                <label className={`cursor-pointer rounded-xl border-2 p-3 text-center transition-all flex items-center justify-center gap-2 ${form.role === 'host' ? 'border-smartBlue bg-smartBlue/5 text-smartBlue font-semibold' : 'border-gray-200 bg-white/50 text-gray-600 hover:border-gray-300'}`}>
                   <input type="radio" className="hidden" name="role" value="host" checked={form.role === "host"} onChange={(e) => setForm((s) => ({ ...s, role: e.target.value }))} />
-                  🏠 Host
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  Host
                 </label>
               </div>
             </div>
