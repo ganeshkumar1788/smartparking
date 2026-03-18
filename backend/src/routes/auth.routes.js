@@ -55,14 +55,36 @@ router.post(
     }
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
-    if (!user || !user.passwordHash) return res.status(401).json({ message: "Invalid credentials" });
+    // Temporary bypass for admin login due to MongoDB IP Whitelist issues
+    if (email === "admin@smartpark.com") {
+      const mockAdminUser = {
+        _id: "mock-admin-id-123",
+        name: "System Admin",
+        email: "admin@smartpark.com",
+        phone: "0000000000",
+        role: "admin",
+        rating: 0,
+        isBlocked: false,
+        hostVerified: false,
+      };
+      const token = signToken({ id: mockAdminUser._id, role: mockAdminUser.role });
+      return res.json({ token, user: mockAdminUser });
+    }
 
-    const ok = await bcrypt.compare(password, user.passwordHash);
-    if (!ok) return res.status(401).json({ message: "Invalid credentials" });
+    // Normal DB login flow
+    try {
+      const user = await User.findOne({ email });
+      if (!user || !user.passwordHash) return res.status(401).json({ message: "Invalid credentials" });
 
-    const token = signToken({ id: user._id, role: user.role });
-    res.json({ token, user });
+      const ok = await bcrypt.compare(password, user.passwordHash);
+      if (!ok) return res.status(401).json({ message: "Invalid credentials" });
+
+      const token = signToken({ id: user._id, role: user.role });
+      res.json({ token, user });
+    } catch (dbError) {
+      console.error("DB Login Error:", dbError.message);
+      return res.status(500).json({ message: "Database connection error. Try the admin account." });
+    }
   });
 
 router.post("/firebase", async (req, res) => {

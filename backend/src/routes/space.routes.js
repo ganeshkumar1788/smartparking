@@ -110,4 +110,26 @@ router.delete("/:id", protect, authorize("host"), async (req, res) => {
   res.json({ message: "Space disabled" });
 });
 
+// Route for camera script to update live occupancy
+router.put("/:id/live-status", async (req, res) => {
+  try {
+    const { occupancy } = req.body;
+    const space = await ParkingSpace.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          "liveStatus.occupancy": occupancy,
+          "liveStatus.lastUpdated": new Date()
+        }
+      },
+      { new: true }
+    );
+    if (!space) return res.status(404).json({ message: "Space not found" });
+    res.json({ message: "Live status updated successfully", space });
+  } catch (error) {
+    console.error("Error updating live status:", error);
+    res.status(500).json({ message: "Server error updating live status" });
+  }
+});
+
 module.exports = router;

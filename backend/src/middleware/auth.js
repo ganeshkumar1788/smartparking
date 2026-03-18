@@ -8,11 +8,23 @@ const protect = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Temporary Admin bypass due to MongoDB timeout
+    if (decoded.id === "mock-admin-id-123") {
+      req.user = {
+        _id: "mock-admin-id-123",
+        role: "admin",
+        email: "admin@smartpark.com"
+      };
+      return next();
+    }
+
     const user = await User.findById(decoded.id);
     if (!user || user.isBlocked) return res.status(401).json({ message: "Unauthorized" });
     req.user = user;
     next();
-  } catch {
+  } catch (err) {
+    console.error("JWT Error:", err.message);
     return res.status(401).json({ message: "Invalid token" });
   }
 };

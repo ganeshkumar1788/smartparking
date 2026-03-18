@@ -94,20 +94,13 @@ const NavLink = ({ href, children, isActive }) => {
   return (
     <Link
       href={href}
-      className={`relative px-4 py-2 text-sm font-medium transition-all duration-200 rounded-xl ${
+      className={`relative px-4 py-1.5 text-sm font-medium transition-all duration-200 rounded-full ${
         active 
-          ? "text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20" 
+          ? "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30" 
           : "text-surface-600 hover:text-surface-900 hover:bg-surface-100 dark:text-surface-400 dark:hover:text-surface-100 dark:hover:bg-surface-800"
       }`}
     >
       {children}
-      {active && (
-        <motion.div
-          layoutId="activeNav"
-          className="absolute inset-0 bg-primary-50 dark:bg-primary-900/20 rounded-xl -z-10"
-          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-        />
-      )}
     </Link>
   );
 };
@@ -301,7 +294,7 @@ export const AppShell = ({ children }) => {
           <motion.div
             className={`flex items-center justify-between transition-all duration-300 ${
               scrolled 
-                ? "glass-card rounded-2xl px-4 py-3" 
+                ? "bg-white/80 dark:bg-surface-900/80 backdrop-blur-md shadow-sm border border-gray-100 dark:border-surface-800 rounded-2xl px-5 py-3" 
                 : "bg-transparent py-2"
             }`}
           >

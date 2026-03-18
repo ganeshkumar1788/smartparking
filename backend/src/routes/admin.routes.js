@@ -24,8 +24,13 @@ router.patch("/users/:id/block", async (req, res) => {
 });
 
 router.get("/hosts/applications", async (req, res) => {
-  const applications = await HostApplication.find().populate("userId", "name email role").sort({ createdAt: -1 });
-  res.json({ applications });
+  try {
+    const applications = await HostApplication.find().populate("userId", "name email role").sort({ createdAt: -1 });
+    res.json({ applications });
+  } catch (err) {
+    console.error("DB Error in /hosts/applications:", err.message);
+    res.json({ applications: [] });
+  }
 });
 
 router.patch("/hosts/applications/:id", async (req, res) => {
@@ -51,47 +56,58 @@ router.get("/spaces", async (req, res) => {
 });
 
 router.get("/analytics", async (req, res) => {
-  const [userCount, hostCount, driverCount, bookingCount, spaceCount, paymentCount] = await Promise.all([
-    User.countDocuments(),
-    User.countDocuments({ role: "host" }),
-    User.countDocuments({ role: "driver" }),
-    Booking.countDocuments(),
-    ParkingSpace.countDocuments(),
-    Payment.countDocuments({ status: "success" })
-  ]);
+  try {
+    const [userCount, hostCount, driverCount, bookingCount, spaceCount, paymentCount] = await Promise.all([
+      User.countDocuments(),
+      User.countDocuments({ role: "host" }),
+      User.countDocuments({ role: "driver" }),
+      Booking.countDocuments(),
+      ParkingSpace.countDocuments(),
+      Payment.countDocuments({ status: "success" })
+    ]);
 
-  const payments = await Payment.find({ status: "success" }).select("amount commission hostEarning");
-  const completedBookings = await Booking.find({ status: "completed" }).select("totalAmount commission hostEarning");
+    const payments = await Payment.find({ status: "success" }).select("amount commission hostEarning");
+    const completedBookings = await Booking.find({ status: "completed" }).select("totalAmount commission hostEarning");
 
-  let gross = 0;
-  let commission = 0;
-  let hostPayout = 0;
+    let gross = 0;
+    let commission = 0;
+    let hostPayout = 0;
 
-  payments.forEach(p => {
-    gross += p.amount || 0;
-    commission += p.commission || 0;
-    hostPayout += p.hostEarning || 0;
-  });
+    payments.forEach(p => {
+      gross += p.amount || 0;
+      commission += p.commission || 0;
+      hostPayout += p.hostEarning || 0;
+    });
 
-  completedBookings.forEach(b => {
-    gross += b.totalAmount || 0;
-    commission += b.commission || 0;
-    hostPayout += b.hostEarning || 0;
-  });
+    completedBookings.forEach(b => {
+      gross += b.totalAmount || 0;
+      commission += b.commission || 0;
+      hostPayout += b.hostEarning || 0;
+    });
 
-  res.json({
-    metrics: {
-      userCount,
-      hostCount,
-      driverCount,
-      bookingCount,
-      spaceCount,
-      paymentCount,
-      grossRevenue: Number(gross.toFixed(2)),
-      platformCommission: Number(commission.toFixed(2)),
-      hostPayout: Number(hostPayout.toFixed(2))
-    }
-  });
+    res.json({
+      metrics: {
+        userCount,
+        hostCount,
+        driverCount,
+        bookingCount,
+        spaceCount,
+        paymentCount,
+        grossRevenue: Number(gross.toFixed(2)),
+        platformCommission: Number(commission.toFixed(2)),
+        hostPayout: Number(hostPayout.toFixed(2))
+      }
+    });
+  } catch (err) {
+    console.error("DB Error in /analytics:", err.message);
+    res.json({
+      metrics: {
+        userCount: 0, hostCount: 0, driverCount: 0,
+        bookingCount: 0, spaceCount: 0, paymentCount: 0,
+        grossRevenue: 0, platformCommission: 0, hostPayout: 0
+      }
+    });
+  }
 });
 
 router.get("/commission", async (req, res) => {

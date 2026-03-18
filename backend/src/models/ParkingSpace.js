@@ -27,7 +27,18 @@ const parkingSpaceSchema = new mongoose.Schema(
     rating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
     autoApproveBookings: { type: Boolean, default: true },
-    isActive: { type: Boolean, default: true }
+    isActive: { type: Boolean, default: true },
+    liveStatus: {
+      isCameraActive: { type: Boolean, default: false },
+      cameraUrl: { type: String, trim: true },
+      occupancy: [
+        {
+          slotId: { type: String, required: true },
+          isOccupied: { type: Boolean, default: false }
+        }
+      ],
+      lastUpdated: { type: Date }
+    }
   },
   { timestamps: true }
 );

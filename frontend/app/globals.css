@@ -1,8 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+  @keyframes scan {
+
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(1000%);
+    }
+  }
+}
 
 :root {
   --bg-1: #f0f7ff;
@@ -43,7 +57,7 @@ body {
 
 body {
   color: var(--text);
-  background: 
+  background:
     radial-gradient(ellipse at 0% 0%, rgba(37, 99, 235, 0.08) 0%, transparent 50%),
     radial-gradient(ellipse at 100% 0%, rgba(20, 184, 166, 0.08) 0%, transparent 50%),
     radial-gradient(ellipse at 50% 100%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
@@ -52,7 +66,7 @@ body {
 }
 
 .dark body {
-  background: 
+  background:
     radial-gradient(ellipse at 0% 0%, rgba(37, 99, 235, 0.15) 0%, transparent 50%),
     radial-gradient(ellipse at 100% 0%, rgba(20, 184, 166, 0.1) 0%, transparent 50%),
     radial-gradient(ellipse at 50% 100%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
@@ -75,22 +89,22 @@ body {
 }
 
 .glass-card {
-  background: linear-gradient(135deg, var(--card) 0%, rgba(255,255,255,0.4) 100%);
+  background: linear-gradient(135deg, var(--card) 0%, rgba(255, 255, 255, 0.4) 100%);
   border: 1px solid var(--border);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: 
+  box-shadow:
     0 4px 6px -1px var(--shadow-color),
     0 2px 4px -2px var(--shadow-color),
-    inset 0 1px 0 rgba(255,255,255,0.5);
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .dark .glass-card {
-  background: linear-gradient(135deg, rgba(30,41,59,0.8) 0%, rgba(15,23,42,0.6) 100%);
-  box-shadow: 
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.6) 100%);
+  box-shadow:
     0 4px 6px -1px var(--shadow-color),
     0 2px 4px -2px var(--shadow-color),
-    inset 0 1px 0 rgba(255,255,255,0.05);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 /* Premium Button Styles */
@@ -98,18 +112,18 @@ body {
   @apply relative inline-flex items-center justify-center px-6 py-3 font-semibold text-white transition-all duration-200;
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   border-radius: 12px;
-  box-shadow: 
+  box-shadow:
     0 4px 6px -1px rgba(37, 99, 235, 0.3),
     0 2px 4px -2px rgba(37, 99, 235, 0.2),
-    inset 0 1px 0 rgba(255,255,255,0.2);
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 
+  box-shadow:
     0 10px 20px -5px rgba(37, 99, 235, 0.4),
     0 4px 6px -2px rgba(37, 99, 235, 0.2),
-    inset 0 1px 0 rgba(255,255,255,0.2);
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .btn-primary:active {
@@ -148,8 +162,15 @@ body {
 }
 
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 /* Card Hover Effects */
@@ -164,12 +185,10 @@ body {
 
 /* Shimmer Effect */
 .shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.4) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(255, 255, 255, 0) 100%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
@@ -207,12 +226,10 @@ body {
 
 /* Loading Skeleton */
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--surface-200) 0%,
-    var(--surface-300) 50%,
-    var(--surface-200) 100%
-  );
+  background: linear-gradient(90deg,
+      var(--surface-200) 0%,
+      var(--surface-300) 50%,
+      var(--surface-200) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -255,21 +272,73 @@ body {
 /* Section Divider */
 .section-divider {
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--surface-300) 20%,
-    var(--surface-300) 80%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      var(--surface-300) 20%,
+      var(--surface-300) 80%,
+      transparent 100%);
 }
 
 .dark .section-divider {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255,255,255,0.1) 20%,
-    rgba(255,255,255,0.1) 80%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 20%,
+      rgba(255, 255, 255, 0.1) 80%,
+      transparent 100%);
 }
+
+/* AI Feature Tags */
+.ai-badge-best {
+  @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold;
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  color: white;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.35);
+}
+
+.ai-badge-recommended {
+  @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold;
+  background: linear-gradient(135deg, #2563eb, #14b8a6);
+  color: white;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+
+.ai-demand-high {
+  @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold;
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.dark .ai-demand-high {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.ai-demand-low {
+  @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold;
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.dark .ai-demand-low {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* Poppins for headings */
+h1, h2 {
+  font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+}
+
+/* Pulse glow animation for AI live indicators */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 4px 2px rgba(37, 99, 235, 0.4); }
+  50% { box-shadow: 0 0 8px 4px rgba(37, 99, 235, 0.7); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
