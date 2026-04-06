@@ -9,3 +9,6 @@ build/
 .next/
 *.log
 npm-debug.log*
+
+# Vercel
+.vercel

@@ -21,6 +21,7 @@
     "mongodb-memory-server": "^11.0.1",
     "mongoose": "^8.8.0",
     "morgan": "^1.10.0",
+    "mqtt": "^5.3.5",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {

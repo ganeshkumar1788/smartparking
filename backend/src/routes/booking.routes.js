@@ -1,6 +1,7 @@
 const express = require("express");
 const crypto = require("crypto");
 const QRCode = require("qrcode");
+const mqtt = require("mqtt");
 const Booking = require("../models/Booking");
 const ParkingSpace = require("../models/ParkingSpace");
 const { protect, authorize } = require("../middleware/auth");
@@ -8,6 +9,27 @@ const { calcParkingBill } = require("../utils/calc");
 const { getCommissionPercent } = require("../utils/platform");
 
 const router = express.Router();
+
+// Setup MQTT Client for ESP32 Gate Setup
+const mqttClient = mqtt.connect("mqtt://broker.hivemq.com");
+
+mqttClient.on("connect", () => {
+  console.log("Connected to MQTT Broker for Hardware Gate Control");
+});
+
+mqttClient.on("error", (err) => {
+  console.error("MQTT Error:", err);
+});
+
+// Helper function to trigger the physical gate
+const triggerGate = () => {
+  const message = JSON.stringify({ action: "open_gate", duration: 5000 });
+  mqttClient.publish("smartpark/door/12345/control", message, (err) => {
+    if (err) console.error("Failed to publish MQTT message:", err);
+    else console.log("Gate OPEN signal sent to ESP32 via MQTT.");
+  });
+};
+
 
 // Get availability for a specific space's slots
 router.get("/space/:spaceId/availability", async (req, res) => {
@@ -144,6 +166,10 @@ router.post("/:id/check-in", protect, authorize("host"), async (req, res) => {
   booking.status = "active";
   await booking.save();
 
+  // --- TRIGGER ESP32 HARDWARE GATE ---
+  triggerGate();
+
+
   // Re-fetch populated for frontend
   const populatedBooking = await Booking.findById(booking._id).populate("userId", "name phone");
   res.json({ booking: populatedBooking });
@@ -182,6 +208,10 @@ router.post("/:id/check-out", protect, authorize("host"), async (req, res) => {
   booking.hostEarning = summary.hostEarning;
   booking.status = "completed";
   await booking.save();
+
+  // --- TRIGGER ESP32 HARDWARE GATE ---
+  triggerGate();
+
 
   // Re-fetch populated for frontend
   const populatedBooking = await Booking.findById(booking._id).populate("userId", "name phone");

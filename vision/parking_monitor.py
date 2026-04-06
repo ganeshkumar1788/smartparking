@@ -1,6 +1,7 @@
-﻿import cv2
+import cv2
 import argparse
 import time
+import sys
 import threading
 import requests
 import numpy as np
@@ -66,16 +67,56 @@ def send_update_to_backend(api_url, space_id, occupancy_status):
         print(f"Error sending update to backend: {e}")
 
 def capture_loop(camera_source, model_path, api_url, space_id):
+    try:
+        _capture_loop_impl(camera_source, model_path, api_url, space_id)
+    except Exception as e:
+        print(f"CRITICAL ERROR in capture_loop: {e}", flush=True)
+        import traceback
+        traceback.print_exc(file=sys.stdout)
+        sys.stdout.flush()
+
+def _capture_loop_impl(camera_source, model_path, api_url, space_id):
     global current_frame, latest_occupancy
     model = YOLO(model_path)
     
-    cap = cv2.VideoCapture(int(camera_source) if str(camera_source).isdigit() else camera_source)
-    if not cap.isOpened():
-        print("Error: Could not open camera. Try fallback to sample.mp4")
-        cap = cv2.VideoCapture("sample.mp4")
+    def open_camera(source):
+        # Try DSHOW for Windows camera index
+        backend = cv2.CAP_DSHOW if str(source).isdigit() else cv2.CAP_ANY
+        cap = cv2.VideoCapture(int(source) if str(source).isdigit() else source, backend)
+        if cap.isOpened():
+            ret, _ = cap.read()
+            if ret:
+                return cap
+            cap.release()
+        return None
+
+    cap = open_camera(camera_source)
+    if cap is None:
+        print(f"Warning: Could not open camera source {camera_source}. Searching for other cameras...", flush=True)
+        sys.stdout.flush()
+        for i in range(5):
+            if str(i) == str(camera_source): continue
+            cap = open_camera(i)
+            if cap:
+                print(f"Successfully found and opened camera at index {i}", flush=True)
+                sys.stdout.flush()
+                break
+    
+    if cap is None:
+        fallback_path = r"c:\Users\ganesh\Downloads\smart_park-main\vision\sample.mp4"
+        print(f"Error: No cameras found. Try fallback to {fallback_path}", flush=True)
+        sys.stdout.flush()
+        cap = cv2.VideoCapture(fallback_path)
         if not cap.isOpened():
-            print("Error: Could not open sample.mp4 either.")
+            print(f"Error: Could not open {fallback_path} either.", flush=True)
+            sys.stdout.flush()
             return
+    else:
+        if 'i' in locals() and cap:
+            print(f"Using camera index {i}", flush=True)
+        else:
+            print(f"Using camera source {camera_source}", flush=True)
+        sys.stdout.flush()
         
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     cap.set(cv2.CAP_PROP_FPS, 30)
@@ -85,8 +126,11 @@ def capture_loop(camera_source, model_path, api_url, space_id):
     while True:
         ret, frame = cap.read()
         if not ret:
+            print("Warning: Failed to read frame from camera.", flush=True)
             time.sleep(0.1)
             continue
+        
+        # print(f"Debug: Frame captured successfully at {datetime.now().strftime('%H:%M:%S')}", flush=True)
             
         results = model(frame, verbose=False, conf=CONF_THRESHOLD)[0]
         
@@ -159,7 +203,8 @@ def generate_frames():
             if current_frame is None:
                 # Create a blank image with 'Camera Offline' text
                 blank = np.zeros((480, 640, 3), dtype=np.uint8)
-                cv2.putText(blank, "Camera Offline. Waiting for Host...", (100, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+                msg = f"Camera Offline. Waiting for Host... [{datetime.now().strftime('%H:%M:%S')}]"
+                cv2.putText(blank, msg, (10, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
                 frame = blank
             else:
                 frame = current_frame.copy()

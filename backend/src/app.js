@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
+const connectDB = require("./config/db");
 const { notFound, errorHandler } = require("./middleware/error");
 
 const authRoutes = require("./routes/auth.routes");
@@ -13,6 +14,9 @@ const reviewRoutes = require("./routes/review.routes");
 const adminRoutes = require("./routes/admin.routes");
 
 const app = express();
+
+// Connect to Database
+connectDB();
 
 app.use(helmet());
 app.use(cors({ origin: process.env.CLIENT_URL || "*" }));
