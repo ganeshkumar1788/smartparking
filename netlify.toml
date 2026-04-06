@@ -1,0 +1,15 @@
+[build]
+  command = "npm run build"
+  publish = "frontend/.next"
+
+[[redirects]]
+  # Route API requests to the Netlify Function
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+[[redirects]]
+  # Let Next.js handle all other client-side routing
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,0 +1,9 @@
+[build]
+  # No build command necessary for backend
+  command = "echo 'Backend deployment'"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200

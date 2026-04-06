@@ -32,8 +32,9 @@ import os
 
 # ─── Config ──────────────────────────────────────────────────────────────────
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', 'backend', '.env'))
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', 'frontend', '.env')) # Try frontend too
 
-API_BASE = os.getenv("QR_API_BASE", "http://localhost:5000/api")
+API_BASE = os.getenv("QR_API_BASE") or os.getenv("NEXT_PUBLIC_API_URL") or "http://localhost:5000/api"
 HOST_TOKEN = os.getenv("HOST_AUTH_TOKEN", "")   # Set this once (see README below)
 
 COOLDOWN_SECONDS = 5   # ignore same QR within this window (prevent double-scan)
