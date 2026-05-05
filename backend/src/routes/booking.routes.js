@@ -10,29 +10,62 @@ const { getCommissionPercent } = require("../utils/platform");
 
 const router = express.Router();
 
-// Setup MQTT Client for ESP32 Gate Setup
-const mqttClient = mqtt.connect("mqtt://broker.hivemq.com");
+// -------------------------------------------------------
+// MQTT — ESP32 Gate Control
+// -------------------------------------------------------
+const MQTT_BROKER  = (process.env.MQTT_BROKER  || "mqtt://broker.hivemq.com").trim();
+const MQTT_TOPIC   = (process.env.MQTT_TOPIC   || "smartpark/gate/control").trim();
+
+
+let mqttConnected = false;
+
+const mqttClient = mqtt.connect(MQTT_BROKER, {
+  clientId: `smartpark-backend-${Math.random().toString(16).slice(2, 8)}`,
+  clean: true,
+  reconnectPeriod: 5000,   // auto-reconnect every 5 s if disconnected
+  connectTimeout: 10000,
+});
 
 mqttClient.on("connect", () => {
-  console.log("Connected to MQTT Broker for Hardware Gate Control");
+  mqttConnected = true;
+  console.log(`[MQTT] Connected -> broker: ${MQTT_BROKER}  topic: ${MQTT_TOPIC}`);
+});
+
+mqttClient.on("reconnect", () => {
+  console.log("[MQTT] Reconnecting...");
+});
+
+mqttClient.on("offline", () => {
+  mqttConnected = false;
+  console.warn("[MQTT] Offline - gate triggers will queue until reconnected");
 });
 
 mqttClient.on("error", (err) => {
-  console.error("MQTT Error:", err);
+  console.error("[MQTT] Error:", err.message);
 });
 
-// Helper function to trigger the physical gate
-const triggerGate = () => {
-  const message = JSON.stringify({ action: "open_gate", duration: 5000 });
-  mqttClient.publish("smartpark/door/12345/control", message, (err) => {
-    if (err) console.error("Failed to publish MQTT message:", err);
-    else console.log("Gate OPEN signal sent to ESP32 via MQTT.");
+// Publish open-gate command to ESP32
+const triggerGate = (durationMs = 5000) => {
+  const message = JSON.stringify({ action: "open_gate", duration: durationMs });
+  mqttClient.publish(MQTT_TOPIC, message, { qos: 1 }, (err) => {
+    if (err) console.error("[MQTT] Failed to publish gate message:", err.message);
+    else     console.log(`[MQTT] Gate OPEN signal sent (duration: ${durationMs}ms)`);
   });
 };
 
 
+// -------------------------------------------------------
+// TEST ROUTE — Open the gate manually (host only)
+// GET /api/bookings/gate-test
+// -------------------------------------------------------
+router.post("/gate-test", protect, authorize("host", "admin"), (req, res) => {
+  triggerGate(req.body.durationMs || 5000);
+  res.json({ message: "Gate OPEN signal sent to ESP32", topic: MQTT_TOPIC });
+});
+
 // Get availability for a specific space's slots
 router.get("/space/:spaceId/availability", async (req, res) => {
+
   try {
     const { start, end } = req.query;
     if (!start || !end) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { motion } from "framer-motion";
@@ -13,6 +13,11 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Auto-Recovery System: If the backend is dead/frozen, silently wake it up
+  useEffect(() => {
+    fetch("/api/rescue").catch(() => {});
+  }, []);
 
   const submit = async (e) => {
     e.preventDefault();

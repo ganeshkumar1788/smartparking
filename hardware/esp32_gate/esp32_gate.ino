@@ -1,131 +1,185 @@
+/**
+ * SmartPark - ESP32 Gate Controller
+ * ------------------------------------
+ * Hardware : ESP32 Dev Module + Servo Motor
+ * Libraries: PubSubClient, ESP32Servo, ArduinoJson
+ *
+ * How to install libraries (Arduino IDE -> Sketch -> Manage Libraries):
+ *   1. PubSubClient   by Nick O'Leary
+ *   2. ESP32Servo     by Kevin Harrington
+ *   3. ArduinoJson    by Benoit Blanchon
+ *
+ * Board    : "ESP32 Dev Module"
+ *
+ * Behaviour:
+ *   - Connects to WiFi and HiveMQ MQTT broker
+ *   - Subscribes to "smartpark/gate/control"
+ *   - On  {"action":"open_gate","duration":5000}
+ *       -> Servo opens (90 deg) for [duration] ms -> closes (0 deg)
+ *   - Built-in LED (GPIO 2) blinks while gate is open
+ *   - Non-blocking reconnect for both WiFi and MQTT
+ */
+
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ESP32Servo.h>
+#include <ArduinoJson.h>
 
-// ---------------------------
-// Configuration Configuration
-// ---------------------------
-// Replace with your WiFi credentials
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+// --------------------------------------------------
+// WiFi Credentials
+// --------------------------------------------------c
+const char* ssid     = "Ganesh";
+const char* password = "123456789";
 
-// MQTT Broker settings (using a free public broker for simplicity)
+// --------------------------------------------------
+// MQTT (must match backend .env MQTT_TOPIC)
+// --------------------------------------------------
 const char* mqtt_server = "broker.hivemq.com";
-const int mqtt_port = 1883;
+const int   mqtt_port   = 1883;
+const char* mqtt_topic  = "smartpark/gate/control";
 
-// The topic our backend will publish to
-const char* mqtt_topic = "smartpark/door/12345/control";
-
+// --------------------------------------------------
 // Hardware pins
-const int servoPin = 18; // Data wire connects to GPIO 18 (D18)
+// --------------------------------------------------
+const int SERVO_PIN    = 22;   // GPIO22 - servo signal wire
+const int LED_PIN      = 2;    // GPIO2  - built-in LED
 
-// ---------------------------
+const int SERVO_OPEN   = 90;   // servo angle when gate is OPEN
+const int SERVO_CLOSED = 0;    // servo angle when gate is CLOSED
+
+// --------------------------------------------------
 // Globals
-// ---------------------------
-WiFiClient espClient;
-PubSubClient client(espClient);
-Servo gateServo;
+// --------------------------------------------------
+WiFiClient   espClient;
+PubSubClient mqttClient(espClient);
+Servo        gateServo;
 
-// Setup WiFi connection
-void setup_wifi() {
-  delay(10);
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-  
+// --------------------------------------------------
+// WiFi: connect (blocking until up)
+// --------------------------------------------------
+void connectWiFi() {
+  if (WiFi.status() == WL_CONNECTED) return;
+  Serial.printf("\n[WiFi] Connecting to '%s'", ssid);
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-  
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+  Serial.printf("\n[WiFi] Connected - IP: %s\n", WiFi.localIP().toString().c_str());
 }
 
-// Handle incoming MQTT messages
-void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("]: ");
-  
-  String message = "";
-  for (int i = 0; i < length; i++) {
-    message += (char)payload[i];
-  }
-  Serial.println(message);
+// --------------------------------------------------
+// MQTT: single connect attempt (non-blocking)
+// --------------------------------------------------
+void connectMQTT() {
+  String clientId = "SmartPark-";
+  clientId += String((uint32_t)ESP.getEfuseMac(), HEX);
 
-  // If the message contains "open_gate", we actuate the servo
-  if (message.indexOf("open_gate") >= 0) {
-    Serial.println("Action received! Opening gate...");
-    
-    // Open gate (turn servo to 90 degrees)
-    gateServo.write(90);
-    
-    // You can parse duration from JSON, but we'll default to 5 seconds
-    delay(5000); 
-    
-    // Close gate (return servo to 0 degrees)
-    Serial.println("Closing gate...");
-    gateServo.write(0);
+  Serial.printf("[MQTT] Connecting as %s ... ", clientId.c_str());
+  if (mqttClient.connect(clientId.c_str())) {
+    Serial.println("OK");
+    mqttClient.subscribe(mqtt_topic);
+    Serial.printf("[MQTT] Subscribed to: %s\n", mqtt_topic);
+  } else {
+    Serial.printf("FAILED rc=%d\n", mqttClient.state());
   }
 }
 
-// Auto-reconnect to MQTT if connection drops
-void reconnect() {
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    
-    // Create a random client ID
-    String clientId = "ESP32GateClient-";
-    clientId += String(random(0xffff), HEX);
-    
-    // Attempt to connect
-    if (client.connect(clientId.c_str())) {
-      Serial.println("connected");
-      // Subscribe to our topic
-      client.subscribe(mqtt_topic);
-      Serial.print("Subscribed to topic: ");
-      Serial.println(mqtt_topic);
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      delay(5000);
-    }
+// --------------------------------------------------
+// Gate: open servo for durationMs, then close
+// --------------------------------------------------
+void openGate(int durationMs) {
+  Serial.printf("[GATE] Opening for %d ms\n", durationMs);
+  gateServo.write(SERVO_OPEN);
+
+  unsigned long start = millis();
+  while (millis() - start < (unsigned long)durationMs) {
+    // Blink LED every 300 ms while gate is open
+    digitalWrite(LED_PIN, (millis() / 300) % 2);
+    mqttClient.loop();          // keep MQTT alive during the wait
+    delay(50);
+  }
+
+  gateServo.write(SERVO_CLOSED);
+  digitalWrite(LED_PIN, LOW);
+  Serial.println("[GATE] Closed.");
+}
+
+// --------------------------------------------------
+// MQTT message callback
+// --------------------------------------------------
+void onMessage(char* topic, byte* payload, unsigned int length) {
+  String raw;
+  for (unsigned int i = 0; i < length; i++) raw += (char)payload[i];
+  Serial.printf("[MQTT] <- [%s] %s\n", topic, raw.c_str());
+
+  // Parse JSON:  { "action": "open_gate", "duration": 5000 }
+  StaticJsonDocument<256> doc;
+  DeserializationError err = deserializeJson(doc, raw);
+  if (err) {
+    Serial.printf("[MQTT] JSON error: %s\n", err.c_str());
+    return;
+  }
+
+  const char* action = doc["action"] | "";
+  int duration       = doc["duration"] | 5000;   // default 5 s
+
+  if (strcmp(action, "open_gate") == 0) {
+    openGate(duration);
+  } else {
+    Serial.printf("[MQTT] Unknown action: %s\n", action);
   }
 }
 
+// --------------------------------------------------
+// setup()
+// --------------------------------------------------
 void setup() {
   Serial.begin(115200);
-  
-  // Attach the servo motor and set initial position to 0 (Closed)
-  gateServo.attach(servoPin);
-  gateServo.write(0);
+  delay(200);
 
-  // Connect networking
-  setup_wifi();
-  
-  // Setup MQTT server configuration
-  client.setServer(mqtt_server, mqtt_port);
-  client.setCallback(callback);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+
+  // Essential for ESP32Servo
+  ESP32PWM::allocateTimer(0);
+  ESP32PWM::allocateTimer(1);
+  ESP32PWM::allocateTimer(2);
+  ESP32PWM::allocateTimer(3);
+  gateServo.setPeriodHertz(50); // Standard 50Hz servo
+
+  gateServo.attach(SERVO_PIN, 500, 2400); // using standard microsecond range
+  gateServo.write(SERVO_CLOSED);
+  Serial.println("[SERVO] Attached - gate CLOSED.");
+
+  connectWiFi();
+
+  mqttClient.setServer(mqtt_server, mqtt_port);
+  mqttClient.setCallback(onMessage);
+  mqttClient.setKeepAlive(60);
+  mqttClient.setBufferSize(512);
+  connectMQTT();
 }
 
+// --------------------------------------------------
+// loop()
+// --------------------------------------------------
 void loop() {
-  // Check WiFi connection
+  // Re-connect WiFi if dropped
   if (WiFi.status() != WL_CONNECTED) {
-    setup_wifi();
+    Serial.println("[WiFi] Lost - reconnecting...");
+    connectWiFi();
   }
-  
-  // Check MQTT connection
-  if (!client.connected()) {
-    reconnect();
+
+  // Re-connect MQTT if dropped (retry every 5 s)
+  if (!mqttClient.connected()) {
+    static unsigned long lastRetry = 0;
+    if (millis() - lastRetry > 5000) {
+      lastRetry = millis();
+      connectMQTT();
+    }
   }
-  
-  // Keep the MQTT client alive and listening for messages
-  client.loop();
+
+  mqttClient.loop();
 }
